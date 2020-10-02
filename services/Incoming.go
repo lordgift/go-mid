@@ -16,7 +16,7 @@ func CreateService() *Incoming {
 func CreateRouter(myservice *Incoming) *gin.Engine {
 	r := gin.Default()
 
-	root := r.Group("/")
+	root := r.Group("/", myservice.filter)
 	root.GET("/ping", pong)
 
 	return r
