@@ -13,16 +13,16 @@ func CreateService() *Incoming {
 	return s
 }
 
-func CreateRouter(myservice *Incoming) *gin.Engine {
+func CreateRouter(in *Incoming) *gin.Engine {
 	r := gin.Default()
 
-	root := r.Group("/", myservice.filter)
-	root.GET("/ping", pong)
+	root := r.Group("/", in.filter)
+	root.GET("/ping", in.pong)
 
 	return r
 }
 
-func pong(c *gin.Context) {
+func (in *Incoming) pong(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "pong",
 	})
