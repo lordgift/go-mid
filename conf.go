@@ -1,35 +1,94 @@
 package main
 
 import (
-	"fmt"
-	"go-mid/services"
-	"time"
+	"log"
+
+	"github.com/streadway/amqp"
 )
 
+func failOnError(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %s", msg, err)
+	}
+}
 func main() {
 
-	//go loop("first")
-	//go loop("second")
+	publish()
+	consume()
+}
 
-	higherOrder(func(isOk bool) {
-		if isOk {
-			fmt.Print("99999")
+func publish() {
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	failOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	failOnError(err, "Failed to open a channel")
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		"hello", // name
+		false,   // durable
+		false,   // delete when unused
+		false,   // exclusive
+		false,   // no-wait
+		nil,     // arguments
+	)
+	failOnError(err, "Failed to declare a queue")
+
+	body := "Hello World!"
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(body),
+		})
+	log.Printf(" [x] Sent %s", body)
+	failOnError(err, "Failed to publish a message")
+
+}
+
+func consume() {
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	failOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	failOnError(err, "Failed to open a channel")
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		"hello", // name
+		false,   // durable
+		false,   // delete when unused
+		false,   // exclusive
+		false,   // no-wait
+		nil,     // arguments
+	)
+	failOnError(err, "Failed to declare a queue")
+
+	msgs, err := ch.Consume(
+		q.Name, // queue
+		"",     // consumer
+		true,   // auto-ack
+		false,  // exclusive
+		false,  // no-local
+		false,  // no-wait
+		nil,    // args
+	)
+	failOnError(err, "Failed to register a consumer")
+
+	forever := make(chan bool)
+
+	go func() {
+		for d := range msgs {
+			log.Printf("Received a message: %s", d.Body)
 		}
-	})
+	}()
 
-	s := services.CreateService()
-	r := services.CreateRouter(s)
-	r.Run()
-}
-
-func higherOrder(completion func(bool)) {
-	completion(true)
-}
-
-func loop(my string) {
-	for i := 1; i < 20; i++ {
-		fmt.Printf("%s:%d\n", my, i)
-		time.Sleep(1 * time.Second)
-	}
-
+	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	<-forever
 }
