@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/Nerzal/gocloak/v7"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
@@ -42,11 +43,14 @@ func (in *Incoming) filter(c *gin.Context) {
 	}
 	log.Println(newtoken.AccessToken)
 
-	//newtoken2, err := client.RefreshToken(ctx, token.RefreshToken, clientID, clientSecret, realms)
-	//if err != nil {
-	//	panic("Renew failed:"+ err.Error())
-	//}
-	//log.Println(newtoken2.AccessToken)
+	_, claims, err := client.DecodeAccessToken(ctx, newtoken.AccessToken, realms, "")
+	if err != nil {
+		panic("Renew failed:" + err.Error())
+	}
+
+	//dereference & extract value from claims
+	fmt.Printf("Issuer: %v\n", (*claims)["iss"])
+
 }
 
 func (in *Incoming) filter2(c *gin.Context) {
