@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func Publish() {
+func Publish(queueName string, body string) {
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -15,16 +15,16 @@ func Publish() {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"hello", // name
-		false,   // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
+		queueName, // name
+		false,     // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 
-	body := "Hello World!"
+	//body := "Hello World!"
 	err = ch.Publish(
 		"",     // exchange
 		q.Name, // routing key

@@ -21,8 +21,8 @@ func main() {
 	//r := services.CreateRouter(s)
 	//r.Run()
 
-	mq.Consume()
-	mq.Publish()
+	mq.Consume("hello")
+	mq.Publish("hello", "HELLO")
 }
 
 func higherOrder(completion func(bool)) {
